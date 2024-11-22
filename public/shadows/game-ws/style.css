@@ -1,0 +1,9 @@
+@import url("/shadows/common.css");
+
+.root {
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    width: 100vw;
+}

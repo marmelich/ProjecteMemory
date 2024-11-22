@@ -1,0 +1,27 @@
+@import url("/shadows/common.css");
+
+.root {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: absolute;
+    transform: translate3d(0, 0, 0);
+    width: 100%;
+}
+
+.form {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 2;
+    justify-content: center;
+}
+
+.title {
+    margin-top: 24px;
+}
+
+button {
+    margin-top: 24px; 
+}

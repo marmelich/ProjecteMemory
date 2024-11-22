@@ -1,0 +1,22 @@
+@import url("/shadows/common.css");
+
+.root {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: absolute;
+    transform: translate3d(100%, 0, 0);
+    width: 100%;
+}
+
+.info {
+    align-items: center;
+    color: green;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 2;
+    justify-content: center;
+    min-height: 200px;
+    width: 100%;
+}

@@ -1,0 +1,36 @@
+@import url("/shadows/common.css");
+
+.root {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: absolute;
+    transform: translate3d(100%, 0, 0);
+    width: 100%;
+}
+
+.row {
+    display: flex;
+}
+
+.padding {
+    padding: 8px;
+}
+
+#connectionInfo {
+    flex-grow: 2;
+}
+
+#gameArea {
+    flex-grow: 1;
+    position: relative;
+}
+
+canvas {
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}

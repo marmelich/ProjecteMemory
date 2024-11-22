@@ -1,0 +1,13 @@
+/*
+Aquest CSS és comú a tots els 'shadows' que el criden amb
+@import url("/shadows/common.css");
+*/
+
+.header {
+    display: flex;
+    padding: 10px;
+    background-color: #f0f0f0;
+    font-size: 1.5em;
+    justify-content: center;
+    width: calc(100% - 20px);
+}
