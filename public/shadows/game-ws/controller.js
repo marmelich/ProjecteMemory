@@ -42,10 +42,10 @@ class GameWS extends HTMLElement {
         switch (viewName) {
         case 'game-view-disconnected':
             if (this.view == 'game-view-connecting') {
-                this.animateViewChange('right', animTime, refConnecting, refDisconnected)
+                this.animateViewChange('right', animTime, refConnecting, refDisconnected) //left y right es hacia donde desliza
             }
             if (this.view == 'game-view-disconnecting') {
-                this.animateViewChange('right', animTime, refDisconnecting, refDisconnected)
+                this.animateViewChange('right', animTime, refDisconnecting, refDisconnected) //los dos parametros son de donde venimos y a donde vamos
             }
             break
         case 'game-view-connecting':
@@ -81,7 +81,7 @@ class GameWS extends HTMLElement {
     
         element.style.transform = posBegin;
     
-        // Add small delay to ensure element is positioned before animating
+        //Añande un pequeño retraso en el tiempo para asegurarse de que el elemento está posicionado antes de hacer la animación
         setTimeout(() => {
             let transition = 'transform ' + animTime + ' ease 0s';
             element.style.transition = transition;

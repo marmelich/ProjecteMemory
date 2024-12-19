@@ -26,6 +26,7 @@ class GameViewDisconnected extends HTMLElement {
 
     // Intentar connectar amb el servidor
     async actionConnect() {
+        let name = this.shadow.querySelector("#name").value //añadimos el nombre tambien
         let server = this.shadow.querySelector('#server').value
         let port = this.shadow.querySelector('#port').value
 
@@ -36,6 +37,10 @@ class GameViewDisconnected extends HTMLElement {
         await new Promise(resolve => setTimeout(resolve, 1500))
 
         if (socketConnected) {
+            sendServer({
+                type: "setName",
+                value: name //se manda el nombre
+            })
             document.querySelector('game-ws').showView('game-view-playing')
         } else {
             document.querySelector('game-ws').showView('game-view-disconnected')

@@ -14,7 +14,10 @@ class GameViewPlaying extends HTMLElement {
             playerX: "",
             playerO: "",
             board: [],
-            nextTurn: "X"
+            selected_card: -1,
+            nextTurn: "X",
+            playerXPoints: 0,
+            playerOPoints: 0
         }
         this.opponentId = ""  // Conté l'id de l'oponent
         this.gameStatus = "waitingOpponent" 
@@ -27,6 +30,11 @@ class GameViewPlaying extends HTMLElement {
         this.imgXloaded = false
         this.imgO = null
         this.imgOloaded = false
+
+        this.images = null
+        this.imagesLoaded = null
+        this.imageBack = null
+        this.imageBackLoaded = null
 
         // Funcions per controlar el redibuix i els FPS
         this.reRunLastDrawTime = Date.now();  // Nova propietat per rastrejar l'últim temps de dibuix
@@ -41,13 +49,44 @@ class GameViewPlaying extends HTMLElement {
         // Quan es crea l'element shadow DOM (no quan es connecta el socket)
 
         // Preload images
-        this.imgX = new Image()
-        this.imgX.src = '/images/imgX.png'
-        this.imgX.onload = () => { this.imgXloaded = true }
+        // this.imgX = new Image()
+        // this.imgX.src = '/images/imgX.png'
+        // this.imgX.onload = () => { this.imgXloaded = true }
 
-        this.imgO = new Image()
-        this.imgO.src = '/images/imgO.png'
-        this.imgO.onload = () => { this.imgOloaded = true }
+        // this.imgO = new Image()
+        // this.imgO.src = '/images/imgO.png'
+        // this.imgO.onload = () => { this.imgOloaded = true }
+
+        //PRELOAD IMAGES ANIMAL CROSSING
+        this.images = []
+        let img = new Image()
+        img.src = "../../images/cereza.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/coco.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/malacaton.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/manzana.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/nabo.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/naranja.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/pera.jpg"
+        this.images.push(img)
+        img = new Image()
+        img.src = "../../images/saco.jpg"
+        this.images.push(img)
+        this.images.onload = () => {this.imagesLoaded = true;}
+        this.imageBack = new Image()
+        this.imageBack.src = "../../images/card-back.jpg"
+        this.imageBack.onload = () => {this.imageBackLoaded = true;}
 
         // Carrega els estils CSS
         const style = document.createElement('style')
@@ -124,9 +163,9 @@ class GameViewPlaying extends HTMLElement {
         var width = this.canvas.width
 
         // Calculate useful coords and sizes
-        var thirdHorizontal = width / 3
-        var thirdVertical = height / 3
-        var cellSize = Math.min(thirdHorizontal, thirdVertical) - 5
+        var thirdHorizontal = width / 4
+        var thirdVertical = height / 4
+        var cellSize = Math.min(thirdHorizontal, thirdVertical) - 50
         var sixth = cellSize / 2
         var centerX = width / 2
         var centerY = height / 2
@@ -141,9 +180,9 @@ class GameViewPlaying extends HTMLElement {
         this.coords.y = centerY - sixth - cellSize
         this.coords.cells = []
 
-        for (var cnt = 0; cnt < 9; cnt++) {
-            var cellRow = cnt % 3
-            var cellCol = Math.floor(cnt / 3)
+        for (var cnt = 0; cnt < 16; cnt++) {
+            var cellRow = cnt % 4
+            var cellCol = Math.floor(cnt / 4)
             var cellX = this.coords.x + (cellRow * cellSize)
             var cellY = this.coords.y + (cellCol * cellSize)
 
@@ -169,7 +208,7 @@ class GameViewPlaying extends HTMLElement {
 
             if (previousCellOver != this.cellOver) {
 
-                if (this.match.board[this.cellOver] == "") {
+                if (this.match.board[this.cellOver] && this.match.board[this.cellOver] != "") {
                     // Si és una casella jugable, canvia el cursor del ratolí
                     this.canvas.style.cursor = 'pointer'
                 } else {
@@ -201,7 +240,7 @@ class GameViewPlaying extends HTMLElement {
             // Utilitza la funció getCell per a obtenir l'índex de la casella
             this.cellOver = this.getCell(x, y)
 
-            if (this.match.board[this.cellOver] != "") {
+            if (!(this.match.board[this.cellOver] && this.match.board[this.cellOver] != "") || this.cellOver == this.match.selected_card || this.cellOver == this.match.selected_card2) {
                 this.cellOver = -1
             }    
 
@@ -472,12 +511,21 @@ class GameViewPlaying extends HTMLElement {
         var colorBoard = "black"
         var colorOver = "lightblue"
 
-        if (!this.isMyTurn) {
-            colorX = "#888"
-            colorO = "#888"
-            colorBoard = "#888"
-            colorOver = "#ccc"
+        // if (!this.isMyTurn) {
+        //     colorX = "#888"
+        //     colorO = "#888"
+        //     colorBoard = "#888"
+        //     colorOver = "#ccc"
+        // }
+
+        //AÑADIMOS TEXTO DE TURNOS Y PUNTOS
+        if (this.match.nextTurn == "X") {
+            this.shadow.querySelector('#nextTurn').innerHTML = this.match.playerXName + "'s turn"
+        } else {
+            this.shadow.querySelector('#nextTurn').innerHTML = this.match.playerOName + "'s turn"
         }
+        this.shadow.querySelector('#playerXPoints').innerHTML = this.match.playerXName + " Points: " + this.match.playerXPoints
+        this.shadow.querySelector('#playerOPoints').innerHTML = this.match.playerOName + " Points: " + this.match.playerOPoints
 
         // Per totes les caselles del tauler
         for (var cnt = 0; cnt < board.length; cnt++) {
@@ -485,28 +533,24 @@ class GameViewPlaying extends HTMLElement {
             var cellCoords = this.coords.cells[cnt]
 
             // Si toca jugar, i el ratolí està sobre la casella, dibuixa la simulació de partida
-            if (this.isMyTurn && this.cellOver == cnt && board[cnt] == "") {
+            if (this.isMyTurn && this.cellOver == cnt && board[cnt] != "" && this.cellOver != this.match.selected_card && this.cellOver != this.match.selected_card2) {
                 this.fillRect(ctx, 10, colorOver, cellCoords.x, cellCoords.y, cellSize, cellSize)
-                if (this.player == "X") {
-                   this.drawX(ctx, colorX, cellCoords, cellSize)
-                } else {
-                    this.drawO(ctx, colorO, cellCoords, cellSize)
-                } 
             }
 
             // Si no toca jugar i la casella coincideix amb la posició del ratolí de l'oponent, ho dibuixem
             if (!this.isMyTurn && this.cellOpponentOver == cnt) {
                 var cellOverCords = this.coords.cells[this.cellOpponentOver]
                 this.fillRect(ctx, 10, colorOver, cellCoords.x, cellCoords.y, cellSize, cellSize)
-                if (this.player == "X") {
-                   this.drawO(ctx, colorO, cellOverCords, cellSize)
-                } else {
-                    this.drawX(ctx, colorX, cellOverCords, cellSize)
-                } 
             }
-
-            // Dibuixa el requadre de la casella
-            this.drawRect(ctx, 10, colorBoard, cellCoords.x, cellCoords.y, cellSize, cellSize)
+            //this.drawRect(ctx, 10, colorBoard, cellCoords.x, cellCoords.y, cellSize, cellSize)
+            if (cell != "") {
+                // Dibuixa el requadre de la casella
+                if (cnt != this.match.selected_card && cnt != this.match.selected_card2) {
+                    this.drawImage(ctx, this.imageBack, cellCoords, cellSize)
+                } else {
+                    this.drawImage(ctx, this.images[cell-1], cellCoords, cellSize)
+                }
+            }
 
             // Dibuixa el contingut de la casella
             if (cell == "X") {

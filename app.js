@@ -1,6 +1,6 @@
-const express = require('express')
-const shadowsObj = require('./utilsShadows.js')
-const webSockets = require('./utilsWebSockets.js')
+const express = require('express') //servidor http
+const shadowsObj = require('./utilsShadows.js') //maneja html css js del shadowdom
+const webSockets = require('./utilsWebSockets.js') //gestiona conexiones websocket
 
 /*
     WebSockets server, example of messages:
@@ -31,28 +31,32 @@ const webSockets = require('./utilsWebSockets.js')
         "X" or "O" or "" (in case of tie)
  */
 
-var ws = new webSockets()
-let shadows = new shadowsObj()
+var ws = new webSockets() //instancia servidor websocket
+let shadows = new shadowsObj() //instancia gestion de archivos de recursos
 
 // Jugadors i partides
-let matches = []
+let matches = [] //lista global partidas
 
-// Start HTTP server
-const app = express()
-const port = process.env.PORT || 8888
+
+
+// CONFIGURAR HTTP SERVER
+const app = express() //instancia de Express que maneja HTTP
+const port = process.env.PORT || 8888 //adjudicamos puerto
 
 // Publish static files from 'public' folder
-app.use(express.static('public'))
+app.use(express.static('public')) //pone disponible la carpeta public
 
-// Activate HTTP server
+
+
+// INICIALIZAR SERVIDOR HTTP
 const httpServer = app.listen(port, appListen)
-async function appListen () {
-  await shadows.init('./public/index.html', './public/shadows')
+async function appListen() {
+  await shadows.init('./public/index.html', './public/shadows') //procesa los archivos que formaran las paginas
   console.log(`Listening for HTTP queries on: http://localhost:${port}`)
   console.log(`Development queries on: http://localhost:${port}/index-dev.html`)
 }
 
-// Close connections when process is killed
+// CIERRE DEL SERVIDOR cuando el proceso termina
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 function shutDown() {
@@ -62,63 +66,77 @@ function shutDown() {
   process.exit(0);
 }
 
-// WebSockets
-ws.init(httpServer, port)
+// INICIALIZACION SERVIDOR WEBSOCKET
+ws.init(httpServer, port) //vincula servidor websocket con servidor HTTP
 
+
+//MANEJO DE NUEVAS CONEXIONES
 ws.onConnection = (socket, id) => {
 
   console.log("WebSocket client connected: " + id)
   idMatch = -1
   playersReady = false
-  
+
+  //BUSCA PARTIDA
+
+  // Si no hi ha partides, en creem una de nova
   if (matches.length == 0) {
-    // Si no hi ha partides, en creem una de nova
     idMatch = 0
     matches.push({
-      playerX: id, 
-      playerO: "", 
-      board: ["", "", "", "", "", "", "", "", ""],
+      playerX: id,
+      playerO: "",
+      board: createboard(),
       nextTurn: "X"
     })
-  } else {
-    // Si hi ha partides, mirem si n'hi ha alguna en espera de jugador
+  } 
+
+  // Si hi ha partides, mirem si n'hi ha alguna en espera de jugador
+  else {
     for (let i = 0; i < matches.length; i++) {
+
+      //Si no hay jugador X, se mete al player en X
       if (matches[i].playerX == "") {
         idMatch = i
         matches[i].playerX = id
-        playersReady = true
+        playersReady = true //pone PLAYERSREADY
         break
-      } else if (matches[i].playerO == "") {
+      } 
+
+      //Si no hay jugador O, se mete al player en O
+      else if (matches[i].playerO == "") {
         idMatch = i
         matches[i].playerO = id
-        playersReady = true
+        playersReady = true //pone PLAYERSREADY
         break
       }
     }
+
     // Si hi ha partides, però totes ocupades creem una de nova
     if (idMatch == -1) {
       idMatch = matches.length
-      matches.push({ 
-        playerX: id, 
-        playerO: "", 
-        board: ["", "", "", "", "", "", "", "", ""],
+      matches.push({
+        playerX: id,
+        playerO: "",
+        board: createboard(),
         nextTurn: "X"
       })
     }
   }
 
+
   // Enviem l'identificador de client socket
   socket.send(JSON.stringify({
     type: "socketId",
-    value: id
+    value: id //le manda el id de jugador
   }))
 
   // Enviem l'estat inicial de la partida
   socket.send(JSON.stringify({
     type: "initMatch",
-    value: matches[idMatch]
+    value: matches[idMatch] //le manda el id de la partida del jugador y su estado inicial
   }))
 
+  // ------------- COMIENZA LA PARTIDA ----------------------------------------------------------
   // Si ja hi ha dos jugadors
   if (playersReady) {
     let idOpponent = ""
@@ -128,6 +146,7 @@ ws.onConnection = (socket, id) => {
       idOpponent = matches[idMatch].playerX
     }
 
+    //Se manda notificación de empezar a jugar
     let wsOpponent = ws.getClientById(idOpponent)
     if (wsOpponent != null) {
       // Informem al oponent que ja té rival
@@ -151,8 +170,9 @@ ws.onConnection = (socket, id) => {
   }
 }
 
-ws.onMessage = (socket, id, msg) => {
-  let obj = JSON.parse(msg)
+//MANEJO DE MENSAJES
+ws.onMessage = (socket, id, msg) => { //socket(conexcion websocket del cliente que envia el mensaje) id (id del cliente) msg(mensaje en formato json)
+  let obj = JSON.parse(msg) //convierte mensaje en objeto
   let idMatch = -1
   let playerTurn = ""
   let idSend = ""
@@ -161,7 +181,7 @@ ws.onMessage = (socket, id, msg) => {
   // Busquem la partida a la que pertany el client
   for (let i = 0; i < matches.length; i++) {
     if (matches[i].playerX == id || matches[i].playerO == id) {
-      idMatch = i
+      idMatch = i //saca el id de la partida
       break
     }
   }
@@ -169,84 +189,92 @@ ws.onMessage = (socket, id, msg) => {
   // Processar el missatge rebut
   if (idMatch != -1) {
     switch (obj.type) {
-    case "cellOver":
-      // Si revem la posició del mouse de qui està jugant, l'enviem al rival
-      playerTurn = matches[idMatch].nextTurn
-      idSend = matches[idMatch].playerX
-      if (playerTurn == "X") idSend = matches[idMatch].playerO
+      
+      //HOVER
+      case "cellOver": 
+        // Si revem la posició del mouse de qui està jugant, l'enviem al rival
+        playerTurn = matches[idMatch].nextTurn
+        idSend = matches[idMatch].playerX
+        if (playerTurn == "X") idSend = matches[idMatch].playerO
 
-      wsSend = ws.getClientById(idSend)
-      if (wsSend != null) {
-        wsSend.send(JSON.stringify({
-          type: "opponentOver",
-          value: obj.value
-        }))
-      }
-      break
-    case "cellChoice":
-      // Si rebem la posició de la cel·la triada, actualitzem la partida
-      playerTurn = matches[idMatch].nextTurn
-      matches[idMatch].board[obj.value] = playerTurn
-
-      // Comprovem si hi ha guanyador
-      let winner = ""
-      let board = matches[idMatch].board
-
-      // Verificar files
-      if (board[0] == board[1] && board[0] == board[2]) winner = board[0]
-      else if (board[3] == board[4] && board[3] == board[5]) winner = board[3]
-      else if (board[6] == board[7] && board[6] == board[8]) winner = board[6]
-
-      // Verificar columnes
-      else if (board[0] == board[3] && board[0] == board[6]) winner = board[0]
-      else if (board[1] == board[4] && board[1] == board[7]) winner = board[1]
-      else if (board[2] == board[5] && board[2] == board[8]) winner = board[2]
-
-      // Verificar diagonals
-      else if (board[0] == board[4] && board[0] == board[8]) winner = board[0]
-      else if (board[2] == board[4] && board[2] == board[6]) winner = board[2]
-
-      // Comprovem si hi ha empat (ja no hi ha cap espai buit)
-      let tie = true
-      for (let i = 0; i < board.length; i++) {
-        if (board[i] == "") {
-          tie = false
-          break
+        wsSend = ws.getClientById(idSend)
+        if (wsSend != null) {
+          wsSend.send(JSON.stringify({
+            type: "opponentOver",
+            value: obj.value
+          }))
         }
-      }
+        break
 
-      if (winner == "" && !tie) {
-        // Si no hi ha guanyador ni empat, canviem el torn
-        if (matches[idMatch].nextTurn == "X") {
-          matches[idMatch].nextTurn = "O"
-        } else {
-          matches[idMatch].nextTurn = "X"
+      //CLICK
+      case "cellChoice":
+        // Si rebem la posició de la cel·la triada, actualitzem la partida
+        playerTurn = matches[idMatch].nextTurn //coge el id de la persona
+        matches[idMatch].board[obj.value] = playerTurn //actualiza el tablero con el simbolo en la celda que acaba de clickar el jugador
+
+        // Comprovem si hi ha guanyador
+        let winner = ""
+        let board = matches[idMatch].board //cogemos el board
+
+        // Verificar files
+        if (board[0] == board[1] && board[0] == board[2]) winner = board[0]
+        else if (board[3] == board[4] && board[3] == board[5]) winner = board[3]
+        else if (board[6] == board[7] && board[6] == board[8]) winner = board[6]
+
+        // Verificar columnes
+        else if (board[0] == board[3] && board[0] == board[6]) winner = board[0]
+        else if (board[1] == board[4] && board[1] == board[7]) winner = board[1]
+        else if (board[2] == board[5] && board[2] == board[8]) winner = board[2]
+
+        // Verificar diagonals
+        else if (board[0] == board[4] && board[0] == board[8]) winner = board[0]
+        else if (board[2] == board[4] && board[2] == board[6]) winner = board[2]
+
+        //Si se ha llenado el board y nadie ha ganado
+        // Comprovem si hi ha empat (ja no hi ha cap espai buit)
+        let tie = true
+        for (let i = 0; i < board.length; i++) {
+          if (board[i] == "") {
+            tie = false
+            break
+          }
         }
 
-        // Informem al jugador de la partida
-        socket.send(JSON.stringify({
-          type: "gameRound",
-          value: matches[idMatch]
-        }))
+        //CAMBIO DE TURNO A SIGUIENTE JUGADOR
+        if (winner == "" && !tie) {
+          // Si no hi ha guanyador ni empat, canviem el torn
+          if (matches[idMatch].nextTurn == "X") {
+            matches[idMatch].nextTurn = "O"
+          } else {
+            matches[idMatch].nextTurn = "X"
+          }
 
-        // Informem al rival de la partida
-        let idOpponent = ""
-        if (matches[idMatch].playerX == id) {
-          idOpponent = matches[idMatch].playerO
-        } else {
-          idOpponent = matches[idMatch].playerX
-        }
-        let wsOpponent = ws.getClientById(idOpponent)
-        if (wsOpponent != null) {
-          wsOpponent.send(JSON.stringify({
+          //SE ENVIA ACTUALIZACION DEL JUEGO
+          // Informem al jugador de la partida
+          socket.send(JSON.stringify({
             type: "gameRound",
             value: matches[idMatch]
           }))
-        }
 
-      } else {
-        // Si hi ha guanyador o empat, acabem la partida
+          // Informem al rival de la partida
+          let idOpponent = ""
+          if (matches[idMatch].playerX == id) {
+            idOpponent = matches[idMatch].playerO
+          } else {
+            idOpponent = matches[idMatch].playerX
+          }
+          let wsOpponent = ws.getClientById(idOpponent)
+          if (wsOpponent != null) {
+            wsOpponent.send(JSON.stringify({
+              type: "gameRound",
+              value: matches[idMatch]
+            }))
+          }
 
+        } 
+
+        //SI HAY GANADOR O EMPATE, FINAL DE PARTIDA 
+        else {
           // Informem al jugador de la partida
           socket.send(JSON.stringify({
             type: "gameOver",
@@ -269,13 +297,14 @@ ws.onMessage = (socket, id, msg) => {
               winner: winner
             }))
           }
-      }
+        }
 
-      break
+        break
     }
   }
 }
 
+//MANEJA DESCONEXION DE UN CLIENTE AL WEBSOCKET
 ws.onClose = (socket, id) => {
   console.log("WebSocket client disconnected: " + id)
 
@@ -293,11 +322,14 @@ ws.onClose = (socket, id) => {
     if (matches[idMatch].playerX == "" && matches[idMatch].playerO == "") {
       // Esborrar la partida per falta de jugadors
       matches.splice(idMatch, 1)
-    } else {
-      
+    } 
+
+
+    //si todavia hay 1 player    
+    else {
       // Reiniciem el taulell
-      matches[idMatch].board = ["", "", "", "", "", "", "", "", ""]
-      
+      matches[idMatch].board= createboard()
+
       // Esborrar el jugador de la partida
       let rival = ""
       if (matches[idMatch].playerX == id) {
@@ -321,16 +353,46 @@ ws.onClose = (socket, id) => {
 
 // Configurar la direcció '/index-dev.html' per retornar
 // la pàgina que descarrega tots els shadows (desenvolupament)
-app.get('/index-dev.html', getIndexDev)
-async function getIndexDev (req, res) {
-  res.setHeader('Content-Type', 'text/html');
-  res.send(shadows.getIndexDev())
+app.get('/index-dev.html', getIndexDev) //genera html
+async function getIndexDev(req, res) {
+  res.setHeader('Content-Type', 'text/html'); //configura el type del encabezado 
+  res.send(shadows.getIndexDev()) //coge el contenido html y lo envia como respuesta al cliente
 }
 
 // Configurar la direcció '/shadows.js' per retornar
 // tot el codi de les shadows en un sol arxiu
-app.get('/shadows.js', getShadows)
-async function getShadows (req, res) {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.send(shadows.getShadows())
+app.get('/shadows.js', getShadows) //aplica js
+async function getShadows(req, res) {
+  res.setHeader('Content-Type', 'application/javascript'); //configura el type del encabezado 
+  res.send(shadows.getShadows()) //coge el contenido js y lo envia como respuesta al cliente
+}
+
+
+
+//FUNCION PARA CREAR EL TABLERO:
+function createboard() {
+  let board = [
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+    "", "", "", "",
+  ]
+  for (let i = 0; i < 9; i++) {
+    while (true) {
+      let pos = Math.floor(Math.random() * 16)
+      if (board[pos] == "") {
+        board[pos] = i
+        break;
+      }
+    }
+    while (true) {
+      let pos = Math.floor(Math.random() * 16)
+      if (board[pos] == "") {
+        board[pos] = i
+        break;
+      }
+    }
+  }
+
+  return board;
 }
