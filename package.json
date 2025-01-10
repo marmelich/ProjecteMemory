@@ -1,9 +1,9 @@
 {
-    "name": "my_app",
+    "name": "animal-crossing-memory",
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
-    "author": "",
+    "author": "Marta Arévalo, Luciano Poyanco, Mar Mèlich",
     "license": "ISC",
     "dependencies": {
         "express": "latest",
@@ -14,9 +14,9 @@
         "ws": "^8.14.2"
     },
     "scripts": {
-        "dev": "nodemon app.js --ext js,html,css",
-        "app": "pm2 start ./app.js",
-        "pm2List": "pm2 list",
-        "pm2Delete": "pm2 delete app"
+      "dev": "nodemon app.js --ext js,html,css",
+      "app": "pm2 start ./app.js",
+      "pm2List": "pm2 list",
+      "pm2Delete": "pm2 delete app"
     }
-}
+  }

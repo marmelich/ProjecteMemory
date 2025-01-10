@@ -18,6 +18,11 @@
     padding: 8px;
 }
 
+.points {
+    display: flex;
+    justify-content: space-between;
+}
+
 #connectionInfo {
     flex-grow: 2;
 }
@@ -33,4 +38,9 @@ canvas {
     position: absolute;
     top: 0;
     width: 100%;
+}
+
+#nextTurn {
+    width: 100%;
+    text-align: center;
 }
