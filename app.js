@@ -152,6 +152,8 @@ ws.onConnection = (socket, id) => {
   // Si ja hi ha dos jugadors
   if (playersReady) {
     let idOpponent = ""
+    matches[idMatch].playerXPoints= 0;
+    matches[idMatch].playerOPoints= 0;
     if (matches[idMatch].playerX == id) {
       idOpponent = matches[idMatch].playerO
     } else {
@@ -196,6 +198,7 @@ ws.onMessage = (socket, id, msg) => {
   for (let i = 0; i < matches.length; i++) {
     if (matches[i].playerX == id || matches[i].playerO == id) {
       idMatch = i
+      console.log(idMatch)
       break
     }
   }
@@ -250,6 +253,7 @@ ws.onMessage = (socket, id, msg) => {
         }
         break
       case "cellChoice":
+        console.log("EL CASO DEL CELLCHOICE")
         // Si rebem la posició de la cel·la triada, actualitzem la partida
         playerTurn = matches[idMatch].nextTurn
         //matches[idMatch].board[obj.value] = playerTurn
@@ -285,18 +289,33 @@ ws.onMessage = (socket, id, msg) => {
         for (let i = 0; i < board.length; i++) {
           if (board[i] != "") {
             gameFinished = false;
+            console.log("gameFinished:", gameFinished)
             break
           }
         }
 
+
         if (gameFinished) {
           if (matches[idMatch].playerOPoints == matches[idMatch].playerXPoints) {
             tie = true;
+            console.log("empateeeeeeeeeeeeeeeeeeeee")
           } else if (matches[idMatch].playerOPoints > matches[idMatch].playerXPoints) {
-            winner = "O"
+            winner = playerOName;
+            console.log("ha ganado O aaaaaaaaaaaaaaaaaaaa")
+            console.log("el winner es: ", winner);
+            break;
           } else {
-            winner = "X"
+            winner = playerXName;
+            console.log("ha ganado X aaaaaaaaaaaaaaaaaaaa")
+            console.log("el winner es: ", winner);
+            break;
           }
+
+
+          console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+        }
+        else {
+          console.log("El juego no ha terminado aún.");
         }
 
         if (winner == "" && !tie) {
@@ -316,6 +335,45 @@ ws.onMessage = (socket, id, msg) => {
               }
               matches[idMatch].selected_card = -1
               matches[idMatch].selected_card2 = -1
+              let gameFinished = true
+              for (let i = 0; i < board.length; i++) {
+                if (board[i] != "") {
+                  gameFinished = false;
+                  console.log("gameFinished:", gameFinished)
+                  break
+                }
+              }
+              if (gameFinished) {
+                if (matches[idMatch].playerOPoints == matches[idMatch].playerXPoints) {
+                  tie = true;
+                  console.log("empateeeeeeeeeeeeeeeeeeeee")
+                  // Informem al jugador de la partida
+                  socket.send(JSON.stringify({
+                    type: "gameOver",
+                    value: matches[idMatch],
+                    winner: winner
+                  }))
+                } else if (matches[idMatch].playerOPoints > matches[idMatch].playerXPoints) {
+                  winner = "O"
+                  console.log("ha ganado O aaaaaaaaaaaaaaaaaaaa")
+                  // Informem al jugador de la partida
+                    socket.send(JSON.stringify({
+                      type: "gameOver",
+                      value: matches[idMatch],
+                      winner: winner
+                    }))
+                  } else {
+                  winner = "X"
+                  console.log("ha ganado X aaaaaaaaaaaaaaaaaaaa")
+                  // Informem al jugador de la partida
+                  socket.send(JSON.stringify({
+                    type: "gameOver",
+                    value: matches[idMatch],
+                    winner: winner
+                  }))
+                }
+              }
+
               if (matches[idMatch].nextTurn == "X") {
                 matches[idMatch].nextTurn = "O"
                 idOpponent = matches[idMatch].playerO
@@ -334,7 +392,6 @@ ws.onMessage = (socket, id, msg) => {
               }))
             }, 1000)
           }
-
           // Informem al jugador de la partida
           socket.send(JSON.stringify({
             type: "gameRound",
@@ -357,6 +414,7 @@ ws.onMessage = (socket, id, msg) => {
           }
 
         } else {
+          console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ")
           // Si hi ha guanyador o empat, acabem la partida
 
           // Informem al jugador de la partida
@@ -364,6 +422,7 @@ ws.onMessage = (socket, id, msg) => {
             type: "gameOver",
             value: matches[idMatch],
             winner: winner
+            
           }))
 
           // Informem al rival de la partida

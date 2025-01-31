@@ -252,6 +252,9 @@ class GameViewPlaying extends HTMLElement {
                 })
             }
         }
+        console.log("Game Status:", this.gameStatus);
+        console.log("Board State:", this.match.board);
+        console.log("Winner:", this.winner);
 
         this.restartRun()
     }
@@ -280,9 +283,23 @@ class GameViewPlaying extends HTMLElement {
             this.cellOpponentOver = obj.value
             break
         case "gameOver":
+            console.log("HA LLEGADO AL ONSERVERMESSAGE")
             this.gameStatus = "gameOver"
             this.match = obj.value
             this.winner = obj.winner
+            let ganador = "";
+            console.log("este es el objeto winner",obj.winner);
+            if (this.match.playerXPoints>this.match.playerOPoints){
+                ganador = this.match.playerXName;
+                alert(`HA GANADO ${ganador}`);
+            }
+            else if (this.match.playerXPoints<this.match.playerOPoints){
+                ganador = this.match.playerOName;
+                alert(`HA GANADO ${ganador}`);
+            }
+            else{
+                alert("EMPATE!!");
+            }
             break
         case "gameRound":
             this.gameStatus = "gameRound"
@@ -380,8 +397,10 @@ class GameViewPlaying extends HTMLElement {
                 this.drawBoard(this.ctx)
                 break
             case "gameOver":
-                this.drawBoard(this.ctx)
+                console.log("HA LLEGADO AL DRAW SALUDOS")
+                //this.drawBoard(this.ctx)
                 this.drawGameOver(this.ctx)
+                console.log("SE HA PINTAO")
                 break
         }
     }
@@ -428,6 +447,7 @@ class GameViewPlaying extends HTMLElement {
     }
 
     drawText(ctx, fontFace, fontSize, color, alignment, text, x, y) {
+        console.log("DENTRO DEL DRAW TEXT")
         var dpr = window.devicePixelRatio || 1
         var prpFont = fontSize * dpr
 
@@ -492,6 +512,7 @@ class GameViewPlaying extends HTMLElement {
     }
 
     drawGameOver (ctx) {
+        console.log("DENTRO DEL DRAWGAMEOVER")
         var text = 'Game Over'
         if (this.winner != "") {
             text = text + `, guanyador: ${this.winner}`
