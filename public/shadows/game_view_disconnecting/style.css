@@ -8,11 +8,14 @@
     position: absolute;
     transform: translate3d(100%, 0, 0);
     width: 100%;
+    color:#FFF563;
+    font-weight: bold;
+    text-shadow: -2px 0 #C48D3F, 0 2px #C48D3F, 2px 0 #C48D3F, 0 -2px #C48D3F;
 }
 
 .info {
     align-items: center;
-    color: red;
+    /*color: red;*/
     display: flex;
     flex-direction: column;
     flex-grow: 2;
